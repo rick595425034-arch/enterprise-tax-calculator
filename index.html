@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业税务计算器</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", sans-serif; background: #f0f2f5; color: #222; font-size: 14px; }
+.wrap { max-width: 820px; margin: 24px auto; padding: 0 16px 60px; }
+h1 { text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #111; }
+
+.card { background: #fff; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.card-title { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media(max-width:520px){ .grid2,.grid3 { grid-template-columns: 1fr; } }
+
+.field { }
+.field label { display: block; color: #555; margin-bottom: 5px; font-size: 13px; }
+.field input[type=number], .field select {
+  width: 100%; padding: 9px 11px; border: 1.5px solid #e0e0e0;
+  border-radius: 8px; font-size: 14px; outline: none; background: #fafafa;
+  transition: border-color .15s;
+}
+.field input[type=number]:focus, .field select:focus { border-color: #1677ff; background: #fff; }
+.field .sub { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+.radios { display: flex; gap: 16px; margin-top: 6px; }
+.radios label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 14px; }
+
+.btn {
+  display: block; width: 100%; padding: 14px;
+  background: #1677ff; color: #fff; border: none;
+  border-radius: 10px; font-size: 16px; font-weight: 600;
+  cursor: pointer; margin-top: 6px; letter-spacing: .5px;
+}
+.btn:active { background: #0e5fd8; }
+
+/* 结果区 */
+#result { display: none; margin-top: 14px; }
+.result-card { background: #fff; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.result-card h3 { font-size: 14px; font-weight: 600; color: #1677ff; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e8f0fe; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: #f7f9fc; padding: 9px 12px; text-align: left; color: #666; font-weight: 500; font-size: 13px; }
+td { padding: 9px 12px; border-bottom: 1px solid #f3f3f3; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.label { color: #555; }
+tr.sub-row td { color: #888; font-size: 13px; padding-left: 20px; }
+tr.sub-row td:first-child::before { content: '└ '; }
+tr.section td { font-weight: 600; background: #f7f9fc; color: #333; }
+tr.total-row td { font-weight: 700; font-size: 15px; color: #1677ff; background: #eef4ff; }
+tr.profit-row td { font-weight: 700; font-size: 15px; color: #389e0d; background: #f6ffed; }
+tr.rate-row td { color: #888; font-size: 13px; }
+.tag-yes { color: #389e0d; font-weight: 600; }
+.tag-no  { color: #cf1322; font-weight: 600; }
+.zero { color: #ccc; }
+.input-toggle { display: flex; align-items: center; gap: 8px; }
+.input-toggle input { flex: 1; }
+.toggle-btns { display: flex; border: 1.5px solid #e0e0e0; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.tog { padding: 9px 14px; border: none; background: #fafafa; color: #888; font-size: 13px; cursor: pointer; transition: all .15s; }
+.tog:first-child { border-right: 1px solid #e0e0e0; }
+.tog.active { background: #1677ff; color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>企业税务汇总计算器</h1>
+
+  <!-- 基础数据 -->
+  <div class="card">
+    <div class="card-title">基础数据</div>
+    <div style="margin-bottom:12px">
+      <div class="field">
+        <label>营业收入</label>
+        <div class="input-toggle">
+          <input type="number" id="income" placeholder="如：1000000" min="0">
+          <div class="toggle-btns" id="incomeType">
+            <button type="button" class="tog active" data-val="tax">含税</button>
+            <button type="button" class="tog" data-val="notax">不含税</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="field">
+        <label>营业成本</label>
+        <div class="input-toggle">
+          <input type="number" id="cost" placeholder="如：500000" min="0">
+          <div class="toggle-btns" id="costType">
+            <button type="button" class="tog active" data-val="tax">含税</button>
+            <button type="button" class="tog" data-val="notax">不含税</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>期间费用（管理/销售/财务）</label>
+        <input type="number" id="expense" placeholder="如：150000" min="0">
+        <div class="sub">不含增值税，直接填写</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 税率参数 -->
+  <div class="card">
+    <div class="card-title">税率参数</div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="field">
+        <label>纳税人类型</label>
+        <select id="vatPayer">
+          <option value="general">一般纳税人</option>
+          <option value="small">小规模纳税人</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>增值税率</label>
+        <select id="vatRate">
+          <option value="0.13">13%（货物/加工）</option>
+          <option value="0.09">9%（不动产/运输）</option>
+          <option value="0.06">6%（服务/无形资产）</option>
+          <option value="0.03">3%（小规模）</option>
+          <option value="0.01">1%（小规模优惠）</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="field">
+        <label>所在地区（城建税）</label>
+        <select id="cbtRate">
+          <option value="0.07">市区 7%</option>
+          <option value="0.05">县城/镇 5%</option>
+          <option value="0.01">其他 1%</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>企业所得税类型</label>
+        <select id="citType">
+          <option value="auto">自动判断（小微/标准）</option>
+          <option value="0.25">标准企业 25%</option>
+          <option value="0.15">高新技术企业 15%</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>印花税合同类型</label>
+        <select id="stampType">
+          <option value="0.0003">购销合同 0.03%</option>
+          <option value="0.0005">借款合同 0.05%</option>
+          <option value="0.001">租赁/保险合同 0.1%</option>
+          <option value="0.00025">技术合同 0.025%</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>印花税计税比例</label>
+        <select id="stampRatio">
+          <option value="1">收入全额</option>
+          <option value="0.8">收入+成本×80%</option>
+          <option value="0.7">收入+成本×70%</option>
+          <option value="0.5">收入+成本×50%</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="calcBtn">立即计算</button>
+
+  <!-- 结果 -->
+  <div id="result">
+
+    <!-- 基础数据还原 -->
+    <div class="result-card">
+      <h3>基础数据（还原）</h3>
+      <table>
+        <tr><td class="label">营业收入（含税）</td><td class="num" id="r-incomeT">-</td></tr>
+        <tr><td class="label">营业收入（不含税）</td><td class="num" id="r-incomeN">-</td></tr>
+        <tr><td class="label">营业成本（含税）</td><td class="num" id="r-costT">-</td></tr>
+        <tr><td class="label">营业成本（不含税）</td><td class="num" id="r-costN">-</td></tr>
+        <tr><td class="label">期间费用</td><td class="num" id="r-expense">-</td></tr>
+      </table>
+    </div>
+
+    <!-- 增值税 -->
+    <div class="result-card">
+      <h3>增值税</h3>
+      <table>
+        <tr><td class="label">销项税额</td><td class="num" id="r-vatOut">-</td></tr>
+        <tr><td class="label">进项税额</td><td class="num" id="r-vatIn">-</td></tr>
+        <tr class="total-row"><td>应交增值税</td><td class="num" id="r-vat">-</td></tr>
+      </table>
+    </div>
+
+    <!-- 附加税 -->
+    <div class="result-card">
+      <h3>附加税费</h3>
+      <table>
+        <tr><td class="label" id="r-cbtLabel">城市维护建设税</td><td class="num" id="r-cbt">-</td></tr>
+        <tr><td class="label">教育费附加（3%）</td><td class="num" id="r-edu">-</td></tr>
+        <tr><td class="label">地方教育附加（2%）</td><td class="num" id="r-ledu">-</td></tr>
+        <tr class="total-row"><td>附加税合计</td><td class="num" id="r-addTotal">-</td></tr>
+      </table>
+    </div>
+
+    <!-- 印花税 -->
+    <div class="result-card">
+      <h3>印花税</h3>
+      <table>
+        <tr><td class="label">计税依据</td><td class="num" id="r-stampBase">-</td></tr>
+        <tr class="total-row"><td>应交印花税</td><td class="num" id="r-stamp">-</td></tr>
+      </table>
+    </div>
+
+    <!-- 企业所得税 -->
+    <div class="result-card">
+      <h3>企业所得税</h3>
+      <table>
+        <tr><td class="label">利润总额（不含税口径）</td><td class="num" id="r-profit0">-</td></tr>
+        <tr><td class="label">应纳税所得额</td><td class="num" id="r-citBase">-</td></tr>
+        <tr><td class="label">适用税率</td><td class="num" id="r-citRate">-</td></tr>
+        <tr class="total-row"><td>应交企业所得税</td><td class="num" id="r-cit">-</td></tr>
+      </table>
+    </div>
+
+    <!-- 汇总 -->
+    <div class="result-card">
+      <h3>税款汇总</h3>
+      <table>
+        <tr><td class="label">增值税</td><td class="num" id="s-vat">-</td></tr>
+        <tr><td class="label">附加税合计</td><td class="num" id="s-add">-</td></tr>
+        <tr><td class="label">印花税</td><td class="num" id="s-stamp">-</td></tr>
+        <tr><td class="label">企业所得税</td><td class="num" id="s-cit">-</td></tr>
+        <tr class="total-row"><td>税款合计</td><td class="num" id="s-total">-</td></tr>
+        <tr class="profit-row"><td>税后净利润</td><td class="num" id="s-net">-</td></tr>
+        <tr class="rate-row"><td>综合税负率（占不含税收入）</td><td class="num" id="s-rate">-</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>var a0_0x7aa0ac=a0_0x29a9;(function(_0x498e22,_0x156729){var _0x1fcf5a=a0_0x29a9,_0x8ee33b=_0x498e22();while(!![]){try{var _0x12316f=parseInt(_0x1fcf5a(0x6a))/0x1*(parseInt(_0x1fcf5a(0xa3))/0x2)+parseInt(_0x1fcf5a(0x7e))/0x3+-parseInt(_0x1fcf5a(0xb0))/0x4+parseInt(_0x1fcf5a(0x88))/0x5*(parseInt(_0x1fcf5a(0x98))/0x6)+parseInt(_0x1fcf5a(0x75))/0x7*(parseInt(_0x1fcf5a(0x90))/0x8)+parseInt(_0x1fcf5a(0x6e))/0x9+parseInt(_0x1fcf5a(0x7c))/0xa*(-parseInt(_0x1fcf5a(0x77))/0xb);if(_0x12316f===_0x156729)break;else _0x8ee33b['push'](_0x8ee33b['shift']());}catch(_0xd03d9a){_0x8ee33b['push'](_0x8ee33b['shift']());}}}(a0_0x4d62,0xea778));var a0_0x1562e4=(function(){var _0x3cf8d5=!![];return function(_0x2f72d3,_0xdaee8a){var _0x12a46b=_0x3cf8d5?function(){var _0x2d4721=a0_0x29a9;if(_0xdaee8a){var _0x578342=_0xdaee8a[_0x2d4721(0x9f)](_0x2f72d3,arguments);return _0xdaee8a=null,_0x578342;}}:function(){};return _0x3cf8d5=![],_0x12a46b;};}()),a0_0x57aa1e=a0_0x1562e4(this,function(){var _0x15f69c=a0_0x29a9;return a0_0x57aa1e[_0x15f69c(0x8c)]()['search'](_0x15f69c(0x81))['toString']()['constructor'](a0_0x57aa1e)['search'](_0x15f69c(0x81));});a0_0x57aa1e();function a0_0x29a9(_0x205a1f,_0x5782a9){_0x205a1f=_0x205a1f-0x6a;var _0x585d72=a0_0x4d62();var _0x57aa1e=_0x585d72[_0x205a1f];if(a0_0x29a9['kqBmga']===undefined){var _0x1562e4=function(_0x5be9d7){var _0x1b6e53='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var _0x4fbdc2='',_0x58b553='',_0xf1c0c0=_0x4fbdc2+_0x1562e4,_0x3cf8d5=(''+function(){return 0x0;})['indexOf']('\x0a')!==-0x1;for(var _0x2f72d3=0x0,_0xdaee8a,_0x12a46b,_0x578342=0x0;_0x12a46b=_0x5be9d7['charAt'](_0x578342++);~_0x12a46b&&(_0xdaee8a=_0x2f72d3%0x4?_0xdaee8a*0x40+_0x12a46b:_0x12a46b,_0x2f72d3++%0x4)?_0x4fbdc2+=_0x3cf8d5||_0xf1c0c0['charCodeAt'](_0x578342+0xa)-0xa!==0x0?String['fromCharCode'](0xff&_0xdaee8a>>(-0x2*_0x2f72d3&0x6)):_0x2f72d3:0x0){_0x12a46b=_0x1b6e53['indexOf'](_0x12a46b);}for(var _0x15b21a=0x0,_0x3ffe76=_0x4fbdc2['length'];_0x15b21a<_0x3ffe76;_0x15b21a++){_0x58b553+='%'+('00'+_0x4fbdc2['charCodeAt'](_0x15b21a)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x58b553);};a0_0x29a9['ktDlJZ']=_0x1562e4,a0_0x29a9['vZgNmn']={},a0_0x29a9['kqBmga']=!![];}var _0x4d626a=_0x585d72[0x0],_0x29a926=_0x205a1f+_0x4d626a,_0x58946b=a0_0x29a9['vZgNmn'][_0x29a926];if(!_0x58946b){var _0x3dec68=function(_0x49e1ba){this['PNQcpi']=_0x49e1ba,this['ahOhTi']=[0x1,0x0,0x0],this['ufyQEj']=function(){return'newState';},this['gkCAJX']='\x5cw+\x20*\x5c(\x5c)\x20*{\x5cw+\x20*',this['nikFft']='[\x27|\x22].+[\x27|\x22];?\x20*}';};_0x3dec68['prototype']['JfbDDk']=function(){var _0x4ed06d=new RegExp(this['gkCAJX']+this['nikFft']),_0x38fffb=_0x4ed06d['test'](this['ufyQEj']['toString']())?--this['ahOhTi'][0x1]:--this['ahOhTi'][0x0];return this['oqbVIt'](_0x38fffb);},_0x3dec68['prototype']['oqbVIt']=function(_0x594371){if(!Boolean(~_0x594371))return _0x594371;return this['tmuhKa'](this['PNQcpi']);},_0x3dec68['prototype']['tmuhKa']=function(_0x57c29e){for(var _0x75999d=0x0,_0x189cfb=this['ahOhTi']['length'];_0x75999d<_0x189cfb;_0x75999d++){this['ahOhTi']['push'](Math['round'](Math['random']())),_0x189cfb=this['ahOhTi']['length'];}return _0x57c29e(this['ahOhTi'][0x0]);},(''+function(){return 0x0;})['indexOf']('\x0a')===-0x1&&new _0x3dec68(a0_0x29a9)['JfbDDk'](),_0x57aa1e=a0_0x29a9['ktDlJZ'](_0x57aa1e),a0_0x29a9['vZgNmn'][_0x29a926]=_0x57aa1e;}else _0x57aa1e=_0x58946b;return _0x57aa1e;}function n(_0x15b21a){var _0x618d71=a0_0x29a9,_0x3ffe76=parseFloat(document[_0x618d71(0x7a)](_0x15b21a)[_0x618d71(0xa0)]);return isNaN(_0x3ffe76)?0x0:_0x3ffe76;}function sel(_0x3dec68){var _0x11d943=a0_0x29a9;return document[_0x11d943(0x7a)](_0x3dec68)[_0x11d943(0xa0)];}function money(_0x49e1ba){var _0x789793=a0_0x29a9;if(_0x49e1ba===0x0)return _0x789793(0xa6);var _0x4ed06d=_0x49e1ba<0x0,_0x38fffb=Math[_0x789793(0x6c)](_0x49e1ba)[_0x789793(0x7b)](0x5)[_0x789793(0x96)](/\B(?=(\d{3})+(?!\d))/g,',');return _0x4ed06d?_0x789793(0x89)+_0x38fffb+_0x789793(0x72):_0x38fffb;}function pct(_0x594371){var _0x351c79=a0_0x29a9;return(_0x594371*0x64)[_0x351c79(0x7b)](0x2)+'%';}function set(_0x57c29e,_0x75999d){var _0x5ad3fd=a0_0x29a9;document['getElementById'](_0x57c29e)[_0x5ad3fd(0x80)]=_0x75999d;}function a0_0x4d62(){var _0x1e74e7=['C3r5Bgu','nZCYndvbA0nlqwi','phnWyw4GC3r5Bgu9iMnVBg9YoInJzJeZmJiIpI0','zM9YrwfJAa','CI1PBMnVBwvu','Dg9tDhjPBMC','y2XHC3nmAxn0','zxHWzw5Zzq','CxvLCNLtzwXLy3rVCG','nZi1nK1XBhrhAG','CI1ZDgfTCa','5Bcp5B6U5lYb5lIA77Yi4OMKmtaW5lIh77YjmI41jq','CI12yxrpDxq','CI1PBMnVBwvo','CMvZDwX0','CMvWBgfJzq','lNrVz2DSzs1IDg5Z','nZq0q3fyDhPK','CI1WCM9MAxqW','CI12yxrjBG','C21VB3rO','yxv0BW','y2XPy2S','CY1Uzxq','yxbWBhK','DMfSDwu','C21HBgW','5Bcp5B6U5lYb5lIA77YimtaWltmWmos4H++8IEwiHUAUTq','mJqXnKPdDgrWDW','Dgf4','Dgv4DenVBNrLBNq','phnWyw4Gy2XHC3m9iNPLCM8IpJaUmdaWmda8l3nWyw4+','C3rHBxbsyxrPBW','zgf0ys12ywW','CI12yxq','y29ZDfr5Cgu','ywn0AxzL','y29ZDa','yMXVy2S','CI1JyNrmywjLBa','CxvLCNLtzwXLy3rVCKfSBa','mZiYodiYmhvls2TKsG','CI1Szwr1','zgLZCgXHEq','mtzdD2zTDfK','5z+o5BIc57U05OQK5BU66k6+56Io77Yi','ywjZ','ywrK','nJe4oty4n2fht0v1zG','CY1YyxrL','CI1JAxq','CI1Lzhu','pc9ZCgfUpG','ywrKrxzLBNrmAxn0zw5LCG','CI1JAxrsyxrL','nZq4m1zVtLnAvq','C3rHBxbuExbL','ntu2nKnOv0nOtW','z2v0qxr0CMLIDxrL','CI1JyNq','z2v0rwXLBwvUDej5swq','Dg9gAxHLza','nJyXmtbPvfzdEuS','CY12yxq','ndu2mdGWmuLQq051sq','DMf0uMf0zq','Aw5Uzxjive1m','kcGOlISPkYKRksSK','CI1ZDgfTCejHC2u','CY1Hzgq','lNrVzW','CMvTB3zL','CY10B3rHBa'];a0_0x4d62=function(){return _0x1e74e7;};return a0_0x4d62();}document[a0_0x7aa0ac(0xaf)](a0_0x7aa0ac(0x97))[a0_0x7aa0ac(0x8a)](function(_0x189cfb){_0x189cfb['querySelectorAll']('.tog')['forEach'](function(_0x4ca27a){var _0x1c2852=a0_0x29a9;_0x4ca27a[_0x1c2852(0x73)]('click',function(){var _0x397603=_0x1c2852;_0x189cfb[_0x397603(0xaf)](_0x397603(0x84))['forEach'](function(_0x34fb94){var _0x517af3=_0x397603;_0x34fb94[_0x517af3(0x8d)][_0x517af3(0x85)](_0x517af3(0xab));}),_0x4ca27a[_0x397603(0x8d)][_0x397603(0x6d)](_0x397603(0xab));});});});function getToggle(_0x1d3735){var _0x56cdfb=a0_0x7aa0ac,_0x509231=document[_0x56cdfb(0x8f)]('#'+_0x1d3735+'\x20.tog.active');return _0x509231?_0x509231[_0x56cdfb(0x78)](_0x56cdfb(0xa8)):_0x56cdfb(0xa4);}document[a0_0x7aa0ac(0x7a)]('calcBtn')[a0_0x7aa0ac(0x73)](a0_0x7aa0ac(0x9d),function(){var _0x11df41=a0_0x7aa0ac,_0x3c92ac=n('income'),_0x5af3f7=n(_0x11df41(0xac)),_0x4275c4=n(_0x11df41(0x8e)),_0x2b74a4=parseFloat(sel(_0x11df41(0x7f))),_0x2fea94=parseFloat(sel('cbtRate')),_0x34d459=parseFloat(sel(_0x11df41(0x76))),_0x3228c3=parseFloat(sel(_0x11df41(0xa7))),_0x2afcc7=sel('citType'),_0x4a2d17,_0x17cc06,_0x2cd6fd,_0x441268;getToggle('incomeType')===_0x11df41(0xa4)?(_0x4a2d17=_0x3c92ac,_0x17cc06=_0x3c92ac/(0x1+_0x2b74a4)):(_0x17cc06=_0x3c92ac,_0x4a2d17=_0x3c92ac*(0x1+_0x2b74a4));getToggle(_0x11df41(0xaa))===_0x11df41(0xa4)?(_0x2cd6fd=_0x5af3f7,_0x441268=_0x5af3f7/(0x1+_0x2b74a4)):(_0x441268=_0x5af3f7,_0x2cd6fd=_0x5af3f7*(0x1+_0x2b74a4));var _0x399aa2=_0x17cc06*_0x2b74a4,_0x517664=_0x441268*_0x2b74a4,_0x59bde2=Math['max'](0x0,_0x399aa2-_0x517664);sel('vatPayer')===_0x11df41(0xa1)&&(_0x399aa2=_0x17cc06*_0x2b74a4,_0x517664=0x0,_0x59bde2=_0x399aa2);var _0x2a27e6=_0x59bde2*_0x2fea94,_0x305f77=_0x59bde2*0.03,_0x53ccdb=_0x59bde2*0.02,_0xf1e540=_0x2a27e6+_0x305f77+_0x53ccdb,_0x3d96cb,_0x56048b;_0x3228c3===0x1?_0x3d96cb=_0x4a2d17:_0x3d96cb=(_0x4a2d17+_0x2cd6fd)*_0x3228c3;_0x56048b=_0x3d96cb*_0x34d459;var _0x592c60=_0x17cc06-_0x441268-_0x4275c4-_0xf1e540-_0x56048b,_0xba7160=_0x592c60>0x0?_0x592c60:0x0,_0xaa88d4=0x0,_0x2e407c='';if(_0x2afcc7===_0x11df41(0x9c)){if(_0xba7160<=0x0)_0xaa88d4=0x0,_0x2e407c='亏损\x200%';else{if(_0xba7160<=0xf4240)_0xaa88d4=_0xba7160*0.025,_0x2e407c=_0x11df41(0x92);else _0xba7160<=0x2dc6c0?(_0xaa88d4=0xf4240*0.025+(_0xba7160-0xf4240)*0.05,_0x2e407c=_0x11df41(0xa2)):(_0xaa88d4=_0xba7160*0.25,_0x2e407c='标准企业\x2025%');}}else{var _0x1957e6=parseFloat(_0x2afcc7);_0xaa88d4=_0xba7160*_0x1957e6,_0x2e407c=(_0x1957e6*0x64)['toFixed'](0x0)+'%';}var _0x4579ee=_0x59bde2+_0xf1e540+_0x56048b+_0xaa88d4,_0x599496=_0x592c60-_0xaa88d4,_0x354e07=_0x17cc06>0x0?_0x4579ee/_0x17cc06:0x0;set(_0x11df41(0x8b),money(_0x4a2d17)),set(_0x11df41(0x94),money(_0x17cc06)),set('r-costT',money(_0x2cd6fd)),set('r-costN',money(_0x441268)),set('r-expense',money(_0x4275c4)),set(_0x11df41(0x93),money(_0x399aa2)),set(_0x11df41(0x9a),money(_0x517664)),set(_0x11df41(0xa9),money(_0x59bde2)),document['getElementById'](_0x11df41(0xae))[_0x11df41(0xa5)]=_0x11df41(0x6b)+(_0x2fea94*0x64)[_0x11df41(0x7b)](0x0)+'%）',set(_0x11df41(0x79),money(_0x2a27e6)),set(_0x11df41(0x71),money(_0x305f77)),set(_0x11df41(0xb1),money(_0x53ccdb)),set('r-addTotal',money(_0xf1e540)),set(_0x11df41(0x82),money(_0x3d96cb)),set(_0x11df41(0x91),money(_0x56048b)),set(_0x11df41(0x99),money(_0x592c60)),set('r-citBase',money(_0xba7160)),set(_0x11df41(0x74),_0x2e407c),set(_0x11df41(0x70),money(_0xaa88d4)),set(_0x11df41(0x7d),money(_0x59bde2)),set(_0x11df41(0x83),money(_0xf1e540)),set('s-stamp',money(_0x56048b)),set('s-cit',money(_0xaa88d4)),set(_0x11df41(0x86),money(_0x4579ee)),set(_0x11df41(0x9e),money(_0x599496)),set(_0x11df41(0x6f),pct(_0x354e07)),document[_0x11df41(0x7a)](_0x11df41(0x95))[_0x11df41(0x87)][_0x11df41(0xb2)]=_0x11df41(0xad),document['getElementById']('result')['scrollIntoView']({'behavior':_0x11df41(0x9b)});});</script>
+</body>
+</html>
