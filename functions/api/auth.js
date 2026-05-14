@@ -18,11 +18,12 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost({ request, env }) {
-  let key, deviceId;
+  let key, deviceId, activate;
   try {
     const body = await request.json();
     key = (body.key || '').trim().toUpperCase();
     deviceId = (body.deviceId || '').trim();
+    activate = body.activate === true; // 主动输入授权码才能切换设备
   } catch {
     return json({ valid: false, msg: '请求格式错误' });
   }
@@ -53,8 +54,10 @@ export async function onRequestPost({ request, env }) {
     return json({ valid: false, msg: '授权码已过期' });
   }
 
-  // 设备不一致：踢掉旧设备，绑定新设备
+  // 设备不一致
   if (data.deviceId !== deviceId) {
+    // 只有主动输入授权码时才允许切换设备
+    if (!activate) return json({ valid: false, msg: '授权码已在其他设备上使用' });
     data.deviceId = deviceId;
     await env.LICENSE_KEYS.put(key, JSON.stringify(data));
     return json({ valid: true, expires: data.expires, switched: true });
