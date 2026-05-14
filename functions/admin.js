@@ -179,7 +179,9 @@ async function doGenerate() {
       document.getElementById('copyBtn').textContent = '复制';
       document.getElementById('copyBtn').className = 'copy-btn';
       document.getElementById('genKey').value = '';
-      setTimeout(() => setFilter('未激活'), 800);
+      // 直接插入新行，不等KV同步
+      const typeLabel = {'test':'测试(1分钟)','day':'24小时','month':'1个月','quarter':'季度(3个月)','year':'1年','lifetime':'永久'};
+      prependKeyRow({ key: d.key, type: typeLabel[type] || type, createdAt: new Date().toISOString(), activatedAt: '-', expires: '-', status: '未激活' });
     } else { alert(d.msg || '生成失败'); }
   } catch { alert('网络错误，请重试'); }
   btn.textContent = '生成授权码'; btn.disabled = false;
@@ -205,6 +207,23 @@ async function loadKeys(page) {
     renderTable(d.items);
     renderPagination(d.page, d.totalPages);
   } catch { wrap.innerHTML = '<div class="empty">网络错误，请刷新重试</div>'; }
+}
+function prependKeyRow(item) {
+  // 切到未激活tab并确保表格存在
+  currentStatus = '未激活';
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.textContent === '未激活'));
+  const wrap = document.getElementById('tableWrap');
+  let tbody = wrap.querySelector('tbody');
+  if (!tbody) {
+    wrap.innerHTML = '<table><thead><tr><th>授权码</th><th>类型</th><th>生成时间</th><th>激活时间</th><th>过期时间</th><th>状态</th></tr></thead><tbody></tbody></table>';
+    tbody = wrap.querySelector('tbody');
+  }
+  const tr = document.createElement('tr');
+  tr.innerHTML = \`<td><span class="key-cell">\${item.key}</span></td><td><span class="type-badge">\${item.type}</span></td><td>\${fmtDate(item.createdAt)}</td><td>-</td><td>-</td><td><span class="status-badge status-inactive">未激活</span></td>\`;
+  tbody.insertBefore(tr, tbody.firstChild);
+  const badge = document.getElementById('totalBadge');
+  const cur = parseInt(badge.textContent.replace(/\D/g,'')) || 0;
+  badge.textContent = '共 ' + (cur + 1) + ' 个';
 }
 function fmtDate(iso) {
   if (!iso || iso === '-') return '-';
