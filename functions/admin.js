@@ -179,7 +179,7 @@ async function doGenerate() {
       document.getElementById('copyBtn').textContent = '复制';
       document.getElementById('copyBtn').className = 'copy-btn';
       document.getElementById('genKey').value = '';
-      setFilter('未激活');
+      setTimeout(() => setFilter('未激活'), 800);
     } else { alert(d.msg || '生成失败'); }
   } catch { alert('网络错误，请重试'); }
   btn.textContent = '生成授权码'; btn.disabled = false;
@@ -196,7 +196,7 @@ async function loadKeys(page) {
   const wrap = document.getElementById('tableWrap');
   wrap.innerHTML = '<div class="loading">加载中...</div>';
   try {
-    const qs = '/api/admin/keys?page=' + currentPage + (currentStatus ? '&status=' + encodeURIComponent(currentStatus) : '');
+    const qs = '/api/admin/keys?page=' + currentPage + (currentStatus ? '&status=' + encodeURIComponent(currentStatus) : '') + '&t=' + Date.now();
     const res = await fetch(qs, { headers: {'Authorization':'Bearer '+getToken()} });
     if (res.status === 401) { doLogout(); return; }
     const d = await res.json();
