@@ -179,7 +179,7 @@ async function doGenerate() {
       document.getElementById('copyBtn').textContent = '复制';
       document.getElementById('copyBtn').className = 'copy-btn';
       document.getElementById('genKey').value = '';
-      loadKeys();
+      setFilter('未激活');
     } else { alert(d.msg || '生成失败'); }
   } catch { alert('网络错误，请重试'); }
   btn.textContent = '生成授权码'; btn.disabled = false;
