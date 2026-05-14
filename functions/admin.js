@@ -43,6 +43,10 @@ body{font-family:-apple-system,"PingFang SC",sans-serif;background:#f0f3f8;color
 .total-badge{font-size:12px;color:#6b7a99;background:#f0f3f8;padding:3px 10px;border-radius:20px}
 .refresh-btn{background:none;border:1.5px solid #dde3f0;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;color:#6b7a99;transition:.2s}
 .refresh-btn:hover{border-color:#3b6ef8;color:#3b6ef8}
+.filter-tabs{display:flex;gap:6px;margin-bottom:16px}
+.filter-tab{border:1.5px solid #dde3f0;background:#fff;border-radius:20px;padding:5px 16px;cursor:pointer;font-size:13px;color:#6b7a99;transition:.2s}
+.filter-tab:hover{border-color:#3b6ef8;color:#3b6ef8}
+.filter-tab.active{background:#3b6ef8;border-color:#3b6ef8;color:#fff}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;padding:10px 14px;font-size:12px;color:#6b7a99;font-weight:600;border-bottom:1.5px solid #e8ecf4;white-space:nowrap}
 td{padding:12px 14px;font-size:13px;border-bottom:1px solid #f0f3f8;vertical-align:middle}
@@ -114,6 +118,12 @@ tr:hover td{background:#fafbff}
         </div>
         <button class="refresh-btn" onclick="loadKeys()">刷新</button>
       </div>
+      <div class="filter-tabs">
+        <button class="filter-tab" onclick="setFilter('')">全部</button>
+        <button class="filter-tab active" onclick="setFilter('有效')">有效</button>
+        <button class="filter-tab" onclick="setFilter('已过期')">已过期</button>
+        <button class="filter-tab" onclick="setFilter('未激活')">未激活</button>
+      </div>
       <div id="tableWrap"><div class="loading">加载中...</div></div>
       <div class="pagination" id="pagination"></div>
     </div>
@@ -122,7 +132,16 @@ tr:hover td{background:#fafbff}
 <script>
 const TOKEN_KEY = 'admin_token';
 let currentPage = 1;
+let currentStatus = '有效';
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setFilter(status) {
+  currentStatus = status;
+  currentPage = 1;
+  document.querySelectorAll('.filter-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent === (status || '全部'));
+  });
+  loadKeys(1);
+}
 async function doLogin() {
   const pwd = document.getElementById('pwdInput').value;
   const err = document.getElementById('loginErr');
@@ -177,7 +196,8 @@ async function loadKeys(page) {
   const wrap = document.getElementById('tableWrap');
   wrap.innerHTML = '<div class="loading">加载中...</div>';
   try {
-    const res = await fetch('/api/admin/keys?page=' + currentPage, { headers: {'Authorization':'Bearer '+getToken()} });
+    const qs = '/api/admin/keys?page=' + currentPage + (currentStatus ? '&status=' + encodeURIComponent(currentStatus) : '');
+    const res = await fetch(qs, { headers: {'Authorization':'Bearer '+getToken()} });
     if (res.status === 401) { doLogout(); return; }
     const d = await res.json();
     if (!d.success) { wrap.innerHTML = '<div class="empty">加载失败</div>'; return; }

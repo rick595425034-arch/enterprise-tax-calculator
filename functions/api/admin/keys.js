@@ -34,7 +34,8 @@ export async function onRequestGet({ request, env }) {
 
   const url = new URL(request.url);
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
-  const limit = 20;
+  const statusFilter = url.searchParams.get('status') || '';
+  const limit = 15;
 
   // Fetch all key names
   let allKeys = [];
@@ -74,9 +75,10 @@ export async function onRequestGet({ request, env }) {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  const total = items.length;
+  const filtered = statusFilter ? items.filter(i => i.status === statusFilter) : items;
+  const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
-  const pageItems = items.slice((page - 1) * limit, page * limit);
+  const pageItems = filtered.slice((page - 1) * limit, page * limit);
 
   return json({ success: true, items: pageItems, total, totalPages, page });
 }
