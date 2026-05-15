@@ -15,20 +15,8 @@ export async function onRequestPost({ request, env }) {
   let body;
   try { body = await request.json(); } catch { return res({ error: '请求格式错误' }, 400, headers); }
 
-  const { key, inputs } = body;
-  if (!key || !inputs) return res({ error: '参数缺失' }, 400, headers);
-
-  // ── 验证授权码 ───────────────────────────────────────
-  const raw = await env.LICENSE_KEYS.get(key);
-  if (!raw) return res({ error: '授权码无效' }, 403, headers);
-
-  let data;
-  try { data = JSON.parse(raw); } catch { return res({ error: '授权数据错误' }, 500, headers); }
-
-  const now = new Date();
-  if (data.expires && new Date(data.expires) < now) {
-    return res({ error: '授权码已过期' }, 403, headers);
-  }
+  const { inputs } = body;
+  if (!inputs) return res({ error: '参数缺失' }, 400, headers);
 
   // ── 税务计算 ─────────────────────────────────────────
   const result = compute(inputs);
