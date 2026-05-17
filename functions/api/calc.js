@@ -50,7 +50,6 @@ function compute(p) {
   const incomeType = p.incomeType || 'tax';
   const costType   = p.costType   || 'tax';
   const isSmall    = p.vatPayer === 'small';
-  const isSmallMicro = citTypeVal === 'auto';
 
   // 含税/不含税还原
   let incomeT, incomeN, costT, costN;
@@ -81,25 +80,35 @@ function compute(p) {
     } else {
       vatOut = incomeN * vatR; vatIn = 0; vat = vatOut;
     }
-    const disc = isSmallMicro ? 0.5 : 1;
-    cbt  = vat * cbtR * disc;
-    edu  = vat * 0.03 * disc;
-    ledu = vat * 0.02 * disc;
-    addTotal = cbt + edu + ledu;
-    stampBase = (incomeT + costT) * stampRatio;
-    stamp = stampBase * stampR * disc;
-    const exemptVAT = vatExempt ? (incomeT - incomeN) : 0;
-    profit0 = incomeN + exemptVAT - costT - expense - addTotal - stamp;
-  } else {
-    const disc = isSmallMicro ? 0.5 : 1;
-    cbt  = vat * cbtR * disc;
-    edu  = vat * 0.03 * disc;
-    ledu = vat * 0.02 * disc;
-    addTotal = cbt + edu + ledu;
-    stampBase = (incomeT + costT) * stampRatio;
-    stamp = stampBase * stampR * disc;
-    profit0 = incomeN - costN - expense - addTotal - stamp;
   }
+
+  // 两轮计算：先用全额算出利润判断是否小微，再用正确折扣重算
+  function calcTaxes(disc) {
+    const _stampBase = (incomeT + costT) * stampRatio;
+    const _stamp = _stampBase * stampR * disc;
+    const _cbt  = vat * cbtR * disc;
+    const _edu  = vat * 0.03 * disc;
+    const _ledu = vat * 0.02 * disc;
+    const _add  = _cbt + _edu + _ledu;
+    let _profit;
+    if (isSmall) {
+      const exemptVAT = vatExempt ? (incomeT - incomeN) : 0;
+      _profit = incomeN + exemptVAT - costT - expense - _add - _stamp;
+    } else {
+      _profit = incomeN - costN - expense - _add - _stamp;
+    }
+    return { cbt: _cbt, edu: _edu, ledu: _ledu, addTotal: _add, stampBase: _stampBase, stamp: _stamp, profit0: _profit };
+  }
+
+  let disc = 1;
+  if (citTypeVal === 'auto') {
+    // 第一轮：全额算利润，判断是否小微
+    const trial = calcTaxes(1);
+    const trialCitBase = trial.profit0 > 0 ? trial.profit0 : 0;
+    if (trialCitBase <= 3000000) disc = 0.5;
+  }
+
+  ({ cbt, edu, ledu, addTotal, stampBase, stamp, profit0 } = calcTaxes(disc));
 
   citBase = profit0 > 0 ? profit0 : 0;
   cit = 0; citRateLabel = '';
