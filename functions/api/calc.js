@@ -50,6 +50,7 @@ function compute(p) {
   const incomeType = p.incomeType || 'tax';
   const costType   = p.costType   || 'tax';
   const isSmall    = p.vatPayer === 'small';
+  const isSmallMicro = citTypeVal === 'auto';
 
   // 含税/不含税还原
   let incomeT, incomeN, costT, costN;
@@ -80,21 +81,23 @@ function compute(p) {
     } else {
       vatOut = incomeN * vatR; vatIn = 0; vat = vatOut;
     }
-    cbt  = vat * cbtR * 0.5;
-    edu  = vat * 0.03 * 0.5;
-    ledu = vat * 0.02 * 0.5;
+    const disc = isSmallMicro ? 0.5 : 1;
+    cbt  = vat * cbtR * disc;
+    edu  = vat * 0.03 * disc;
+    ledu = vat * 0.02 * disc;
     addTotal = cbt + edu + ledu;
     stampBase = (incomeT + costT) * stampRatio;
-    stamp = stampBase * stampR * 0.5;
+    stamp = stampBase * stampR * disc;
     const exemptVAT = vatExempt ? (incomeT - incomeN) : 0;
     profit0 = incomeN + exemptVAT - costT - expense - addTotal - stamp;
   } else {
-    cbt  = vat * cbtR;
-    edu  = vat * 0.03;
-    ledu = vat * 0.02;
+    const disc = isSmallMicro ? 0.5 : 1;
+    cbt  = vat * cbtR * disc;
+    edu  = vat * 0.03 * disc;
+    ledu = vat * 0.02 * disc;
     addTotal = cbt + edu + ledu;
     stampBase = (incomeT + costT) * stampRatio;
-    stamp = stampBase * stampR;
+    stamp = stampBase * stampR * disc;
     profit0 = incomeN - costN - expense - addTotal - stamp;
   }
 
