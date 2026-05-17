@@ -341,7 +341,7 @@ tr.rate-row td { color: #94a3b8; font-size: 12px; }
 </div>
 
 <div class="hero">
-  <button class="version-btn" id="versionBtn">v1.5 更新记录</button>
+  <button class="version-btn" id="versionBtn">v1.6 更新记录</button>
   <h1>企业税务汇总计算器</h1>
   <p>输入基础数据，自动计算增值税 · 附加税 · 印花税 · 企业所得税</p>
   <div class="auth-badge" id="authBadge" style="display:none"></div>
@@ -353,6 +353,12 @@ tr.rate-row td { color: #94a3b8; font-size: 12px; }
   <div class="changelog-mask" id="changelogMask">
     <div class="changelog-box">
       <h2>更新记录</h2>
+      <div class="cl-version">v1.6 · 2026-05-17</div>
+      <ul>
+        <li>修复非小微企业的小规模纳税人附加税和印花税错误享受5折的问题</li>
+        <li>一般纳税人小微企业同样享受附加税和印花税5折优惠</li>
+        <li>修复小微判断与折扣的循环依赖：先用全额试算利润判断是否小微，再用正确折扣重算</li>
+      </ul>
       <div class="cl-version">v1.5 · 2026-05-13</div>
       <ul>
         <li>小规模纳税人计算逻辑全面修正</li>
